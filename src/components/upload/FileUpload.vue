@@ -3,9 +3,8 @@
     <div
       class="upload-area"
       :class="{ 'drag-over': isDragOver }"
-      @dragover.prevent="handleDragOverLocal"
-      @dragenter.prevent="handleDragEnter"
-      @dragleave.prevent="handleDragLeave"
+      @dragover.prevent="isDragOver = true"
+      @dragleave.prevent="isDragOver = false"
       @drop.prevent="handleDropLocal"
       @click="handleClick"
     >
@@ -41,8 +40,6 @@ import UploadQueue from './UploadQueue.vue';
 const {
   files,
   handleDrop,
-  handleDragOver,
-  handleDragLeave,
   uploadFile,
   cancelUpload,
   retryUpload,
@@ -63,6 +60,17 @@ const handleClick = () => {
   fileInput.value?.click();
 };
 
+// 自动开始上传文件
+const startUploadFiles = async (filesToUpload: File[]) => {
+  for (const file of filesToUpload) {
+    try {
+      await uploadFile(file);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
+  }
+};
+
 // 处理文件选择（使用useFileUpload的方法，然后自动开始上传）
 const handleFileSelect = async (e: Event) => {
   const target = e.target as HTMLInputElement;
@@ -72,29 +80,10 @@ const handleFileSelect = async (e: Event) => {
   useFileUploadHandleFileSelect(e);
 
   // 自动开始上传
-  for (const file of selectedFiles) {
-    try {
-      await uploadFile(file);
-    } catch (error) {
-      console.error('Upload failed:', error);
-    }
-  }
+  await startUploadFiles(selectedFiles);
 };
 
-// 处理拖拽进入
-const handleDragEnter = (event: DragEvent) => {
-  event.preventDefault();
-  event.stopPropagation();
-  isDragOver.value = true;
-};
-
-// 处理拖拽悬停（覆盖useFileUpload的方法以支持拖拽状态）
-const handleDragOverLocal = (event: DragEvent) => {
-  handleDragOver(event);
-  isDragOver.value = true;
-};
-
-// 处理拖拽放置（覆盖useFileUpload的方法以支持拖拽状态）
+// 处理拖拽放置
 const handleDropLocal = async (event: DragEvent) => {
   // 获取拖拽的文件
   const droppedFiles = Array.from(event.dataTransfer?.files || []);
@@ -105,13 +94,7 @@ const handleDropLocal = async (event: DragEvent) => {
   isDragOver.value = false;
 
   // 自动开始上传
-  for (const file of droppedFiles) {
-    try {
-      await uploadFile(file);
-    } catch (error) {
-      console.error('Upload failed:', error);
-    }
-  }
+  await startUploadFiles(droppedFiles);
 };
 
 // 暂停上传

@@ -37,7 +37,6 @@ export function useFileUpload(options: UseFileUploadOptions = {}): UseFileUpload
     chunkSize = 5 * 1024 * 1024,
     maxConcurrency = 3,
     maxRetries = 3,
-    apiUrl = '/api/upload',
   } = options;
 
   const files = ref<FileTask[]>([]);
@@ -90,16 +89,16 @@ export function useFileUpload(options: UseFileUploadOptions = {}): UseFileUpload
   const addFiles = (newFiles: File[]) => {
     newFiles.forEach((file) => {
       const fileTask: FileTask = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${file.name}-${file.size}-${file.lastModified}`,
         file,
         name: file.name,
         size: file.size,
         status: 'pending',
         progress: 0,
-        uploadedBytes: 0,
+        uploadedBytes: 0, // 已上传字节数
         chunks: [],
         fileHash: '',
-        error: null,
+        error: null, // 错误信息
         createdAt: new Date(),
         uploadSpeed: {
           currentSpeed: 0,
